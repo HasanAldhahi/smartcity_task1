@@ -1,4 +1,4 @@
-# smartcity_task1
+# Data Science for Smart City Task 1 
 
 The aim of the project is to conduct a performance analysis of a selected model for 3D object detection using the TUMTraf Intersection Dataset, which comprises labeled LiDAR point clouds and synchronized camera images of traffic at a busy intersection. The dataset includes over 57,400 3D bounding boxes across ten classes of objects performing various driving maneuvers.
 
