@@ -28,7 +28,7 @@ from scipy.spatial.transform import Rotation as R
 
 
 def process_boxes(img, box_data, use_two_colors, input_type, camera_id, lidar_id, perspective,
-                  boxes_coordinate_system_origin, transformation_matrix_vehicle_lidar_to_infra_lidar,dataset_release):
+                  boxes_coordinate_system_origin, transformation_matrix_vehicle_lidar_to_infra_lidar,dataset_release, viz_mode, utils):
     """
     :param img:                     Input image
     :param box_data:                JSON data of the boxes
@@ -52,7 +52,7 @@ def process_boxes(img, box_data, use_two_colors, input_type, camera_id, lidar_id
                 category = box["object_data"]["type"]
 
                 # TODO: temporarily hard code sensor ID (until it is included into mask attributes)
-                color_rgb = get_color(box_idx, category, input_type, camera_id, use_two_colors)
+                color_rgb = get_color(box_idx, category, input_type, camera_id, use_two_colors,viz_mode, utils)
                 # swap channels because opencv uses bgr
                 color_bgr = (color_rgb[2], color_rgb[1], color_rgb[0])
 
@@ -326,7 +326,7 @@ def process_boxes(img, box_data, use_two_colors, input_type, camera_id, lidar_id
     return img
 
 
-def get_color(box_idx, category, input_type, sensor_id, use_two_colors):
+def get_color(box_idx, category, input_type, sensor_id, use_two_colors,viz_color_mode, utils):
     if use_two_colors and input_type == "detections":
         color_rgb = (245, 44, 71)  # red
     elif use_two_colors and input_type == "labels":
@@ -434,7 +434,16 @@ def get_v2i_transformation_matrix(labels_json):
     return None
 
 
-if __name__ == "__main__":
+def visualize_images(input_folder_path_images="", input_folder_path_point_clouds="", input_folder_path_labels=None,
+                     input_folder_path_detections=None, camera_id="", lidar_id="", file_path_calibration_data="",
+                     labels_coordinate_system_origin="s110_lidar_ouster_south",
+                     detections_coordinate_system_origin="s110_lidar_ouster_south",
+                     input_folder_path_v2i_transformation_matrices=None, viz_mode="box3d",
+                     viz_color_mode="by_category", output_folder_path_visualization="visualization",
+                     dataset_release="r00"):
+    
+
+    print("Hello")
     argparser = argparse.ArgumentParser(description="VizLabel Argument Parser")
     argparser.add_argument(
         "--input_folder_path_images",
@@ -509,19 +518,19 @@ if __name__ == "__main__":
     )
     args = argparser.parse_args()
 
-    input_folder_path_images = args.input_folder_path_images
-    input_folder_path_point_clouds = args.input_folder_path_point_clouds
-    input_folder_path_labels = args.input_folder_path_labels
-    input_folder_path_v2i_transformation_matrices = args.input_folder_path_v2i_transformation_matrices
-    input_folder_path_detections = args.input_folder_path_detections
-    camera_id = args.camera_id
-    lidar_id = args.lidar_id
-    labels_coordinate_system_origin = args.labels_coordinate_system_origin
-    detections_coordinate_system_origin = args.detections_coordinate_system_origin
-    viz_mode = args.viz_mode
-    viz_color_mode = args.viz_color_mode
-    output_folder_path_visualization = args.output_folder_path_visualization
-    dataset_release = args.dataset_release
+    # input_folder_path_images = args.input_folder_path_images
+    # input_folder_path_point_clouds = args.input_folder_path_point_clouds
+    # input_folder_path_labels = args.input_folder_path_labels
+    # input_folder_path_v2i_transformation_matrices = args.input_folder_path_v2i_transformation_matrices
+    # input_folder_path_detections = args.input_folder_path_detections
+    # camera_id = args.camera_id
+    # lidar_id = args.lidar_id
+    # labels_coordinate_system_origin = args.labels_coordinate_system_origin
+    # detections_coordinate_system_origin = args.detections_coordinate_system_origin
+    # viz_mode = args.viz_mode
+    # viz_color_mode = args.viz_color_mode
+    # output_folder_path_visualization = args.output_folder_path_visualization
+    # dataset_release = args.dataset_release
 
     if not os.path.exists(output_folder_path_visualization):
         Path(output_folder_path_visualization).mkdir(parents=True)
@@ -542,7 +551,9 @@ if __name__ == "__main__":
 
     types = ("*.jpg", "*.png")  # the tuple of image file types
     input_image_file_paths = []
+    print(input_folder_path_images)
     for files in types:
+        # print(files)
         input_image_file_paths.extend(sorted(glob.glob(input_folder_path_images + "/" + files)))
     print("Found {} images in {}".format(len(input_image_file_paths), input_folder_path_images))
 
@@ -590,7 +601,7 @@ if __name__ == "__main__":
             camera_id = "_".join(Path(image_file_path).name.split(".")[0].split("_")[2:])
 
         if camera_perspectives[camera_id] is None:
-            camera_perspectives[camera_id] = parse_perspective(args.file_path_calibration_data)
+            camera_perspectives[camera_id] = parse_perspective(file_path_calibration_data)
             camera_perspectives[camera_id].initialize_matrices()
 
         img = cv2.imread(image_file_path, cv2.IMREAD_UNCHANGED)
@@ -660,6 +671,8 @@ if __name__ == "__main__":
                     boxes_coordinate_system_origin=labels_coordinate_system_origin,
                     transformation_matrix_vehicle_lidar_to_infra_lidar=transformation_matrix_vehicle_lidar_to_infra_lidar,
                     dataset_release=dataset_release,
+                    viz_mode = viz_color_mode,
+                    utils = utils
                 )
             if detection_file_path != "":
                 if "track_history" in viz_mode:
@@ -681,6 +694,8 @@ if __name__ == "__main__":
                     boxes_coordinate_system_origin=detections_coordinate_system_origin,
                     transformation_matrix_vehicle_lidar_to_infra_lidar=transformation_matrix_vehicle_lidar_to_infra_lidar,
                     dataset_release=dataset_release,
+                    viz_color_mode = viz_color_mode, 
+                    utils = utils
                 )
         if output_folder_path_visualization:
             cv2.imwrite(
@@ -690,6 +705,7 @@ if __name__ == "__main__":
             cv2.imshow("image", img)
             cv2.waitKey()
         current_frame_idx = current_frame_idx + 1
+        # utils = None
 
     # destructor of VisualizationUtils must be called, otherwise open() can no longer be called since it is destroyed before it
-    utils = None
+
