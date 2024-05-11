@@ -12,6 +12,6 @@ INPUT_FOLDER_DATA_SPLIT_ROOT="./data_split"
 cd  ./src/preprocessing/
 # Call your Python script with the arguments
 python create_train_val_split.py \
-    --input_folder_path_dataset "/home/hasan/Desktop/test/smartcity_task1/" \
+    --input_folder_path_dataset "/home/hasan/Desktop/test/smartcity_task1" \
     --input_folder_path_data_split_root "/home/hasan/Desktop/test/smartcity_task1/data_split"
 
